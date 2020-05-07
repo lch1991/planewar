@@ -9,11 +9,13 @@ FRAME_PER_SEC = 60
 CREATE_ENEMY_EVENT = pygame.USEREVENT
 # 英雄发射子弹事件
 HERO_FIRE_EVENT = pygame.USEREVENT + 1
+# 爆炸敌机消失事件
+ENEMY_HIDE_EVENT = pygame.USEREVENT + 2
 
 
 class GameSprite(pygame.sprite.Sprite):
 
-    def __init__(self,image_name,speed=1):
+    def __init__(self,image_name,score=0,speed=1):
 
         # 调用父类的初始化方法
         super().__init__()
@@ -22,6 +24,7 @@ class GameSprite(pygame.sprite.Sprite):
         self.image = pygame.image.load(image_name)
         self.rect = self.image.get_rect()
         self.speed = speed
+        self.score = score
 
     def update(self):
         # 在屏幕的垂直方向上移动
@@ -70,7 +73,7 @@ class Hero(GameSprite):
 
     def __init__(self):
         # 1. 调用父类方法，设置image&speed
-        super().__init__("./images/me1.png",0)
+        super().__init__("./images/me1.png",0,0)
         # 2. 设置英雄的初始位置
         self.rect.centerx = SCREEN_RECT.centerx
         self.rect.bottom = SCREEN_RECT.bottom - 120
@@ -110,7 +113,7 @@ class Bullet(GameSprite):
     def __init__(self):
 
         # 调用父类方法，设置子弹图片，设置初始速度
-        super().__init__("./images/bullet1.png", -2)
+        super().__init__("./images/bullet1.png",0,-2)
 
     def update(self):
 
@@ -123,3 +126,27 @@ class Bullet(GameSprite):
 
     def __del__(self):
         print("子弹被销毁...")
+
+
+class Life(GameSprite):
+    def __init__(self,num):
+        super().__init__("./images/life.png",0,0)
+        self.num = num
+        # 2. 设置英雄的初始位置
+        self.rect.x = SCREEN_RECT.width - 46*num
+        self.rect.y = SCREEN_RECT.height - 57
+
+    def update(self):
+        pass
+
+
+class Blast(GameSprite):
+    def __init__(self,rect):
+        print("./images/enemy2_down" + str(random.randint(1,4)) + ".png")
+        super().__init__("./images/enemy2_down" + str(random.randint(1,4)) + ".png", 0, 0)
+        self.rect = rect
+
+    def update(self):
+        pass
+
+    # def set_pos(self):

@@ -1,20 +1,21 @@
 import pygame
 from plane_sprites import *
+from plane_home import *
 
 
 class PlaneGame(object):
 
-    def __init__(self):
+    def __init__(self,screen):
         print("游戏初始化...")
-        # 1. 创建游戏的窗口
-        self.screen = pygame.display.set_mode(SCREEN_RECT.size)
+        self.screen = screen
         # 2. 创建游戏的时钟
         self.clock = pygame.time.Clock()
         # 3. 调用私有方法，精灵和精灵组的创建
         self.__create_sprites()
         # 4.设置定时事件 创建敌机 1s一个
-        pygame.time.set_timer(CREATE_ENEMY_EVENT,1000)
-        pygame.time.set_timer(HERO_FIRE_EVENT,500)
+        pygame.time.set_timer(CREATE_ENEMY_EVENT,500)
+        pygame.time.set_timer(HERO_FIRE_EVENT,300)
+        pygame.time.set_timer(ENEMY_HIDE_EVENT,200)
 
     def __create_sprites(self):
         ## 两张背景图交替滚动
@@ -29,8 +30,24 @@ class PlaneGame(object):
         self.hero = Hero()
         self.hero_group = pygame.sprite.Group(self.hero)
 
+        # 创建英雄生命的精灵和精灵组
+        life1 = Life(1)
+        life2 = Life(2)
+        life3 = Life(3)
+        self.life_group = pygame.sprite.Group(life1,life2,life3)
+
+        self.blast_group = pygame.sprite.Group()
+
+    @staticmethod
+    def __play_music():
+        """ 播放音乐"""
+        pygame.mixer.music.load('./sound/back_music.mp3')  # 加载背景音乐
+        pygame.mixer.music.set_volume(0.5)  # 设置音量
+        pygame.mixer.music.play(-1)  # 播放背景音乐
+
     def start_game(self):
         print("游戏开始...")
+        self.__play_music()
         while True:
             # 1. 设置刷新帧率
             self.clock.tick(FRAME_PER_SEC)
@@ -55,7 +72,20 @@ class PlaneGame(object):
                 self.enemy_group.add(enemy)
             elif event.type == HERO_FIRE_EVENT:
                 self.hero.fire()
-
+            elif event.type == ENEMY_HIDE_EVENT:
+                for blast1 in self.blast_group.sprites():
+                    self.blast_group.remove(blast1)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                pressed_array = pygame.mouse.get_pressed()
+                for index in range(len(pressed_array)):
+                    if pressed_array[index]:
+                        if index == 0:
+                            print('Pressed LEFT Button!')
+                            plane.start_game()
+                        # elif index == 1:
+                        #     print('The mouse wheel Pressed!')
+                        # elif index == 2:
+                        #     print('Pressed RIGHT Button!')
         # 使用键盘提供的方法获取键盘按键 - 按键元组
         keys_pressed =pygame.key.get_pressed()
         if keys_pressed[pygame.K_RIGHT]:
@@ -79,19 +109,38 @@ class PlaneGame(object):
 
     def __check_collide(self):
 
+        blast_list = []
         # 1. 子弹摧毁敌机
-        pygame.sprite.groupcollide(self.hero.bullets, self.enemy_group, True, True)
-
+        collisions = pygame.sprite.groupcollide(self.hero.bullets, self.enemy_group, True, True)
+        if collisions:
+            for hero_bullet in collisions:  # in hero_shot_enemy.keys():
+                # 击中的爆炸效果
+                rect = hero_bullet.rect
+                # print("rect==",rect)
+                blast = Blast(rect)
+                self.blast_group.add(blast)
+            self.hero.score += 1
+            # print("得分: " , self.hero.score)
         # 2. 敌机撞毁英雄
         enemies = pygame.sprite.spritecollide(self.hero, self.enemy_group, True)
 
-        # 判断列表时候有内容
+        # 判断列表是否有内容
         if len(enemies) > 0:
-            # 让英雄牺牲
-            self.hero.kill()
-
-            # 结束游戏
-            PlaneGame.__game_over()
+            # 获取精灵组生命数
+            nums = len(self.life_group)
+            if nums > 0:
+                for life in self.life_group.sprites():
+                    # 按照位置从左至右删除
+                    if life.num == nums:
+                        self.life_group.remove(life)
+            else:
+                # 让英雄牺牲
+                self.hero.kill()
+                # 结束游戏
+                PlaneGame.__game_over()
+            # pygame.quit()
+            # plane_home = PlaneHome()
+            # plane_home.load()
 
     def __update_sprites(self):
 
@@ -107,6 +156,19 @@ class PlaneGame(object):
         self.hero.bullets.update()
         self.hero.bullets.draw(self.screen)
 
+        self.life_group.update()
+        self.life_group.draw(self.screen)
+
+        self.blast_group.update()
+        self.blast_group.draw(self.screen)
+
+        #  动态添加分数
+        self.drawText()
+
+    def drawText(self):
+        game_font = pygame.font.SysFont('SimHei',30)  # 字体
+        # 绘制游戏得分
+        self.screen.blit(game_font.render('当前得分：%d' % self.hero.score, True, [255, 0, 0]), [20, 20])
     # 静态方法
     @staticmethod
     def __game_over():
@@ -118,4 +180,4 @@ if __name__ == '__main__':
     # 创建游戏对象
     plane = PlaneGame()
     # 启动游戏
-    plane.start_game()
+    # plane.start_game()
