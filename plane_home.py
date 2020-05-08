@@ -24,15 +24,16 @@ class PlaneHome(object):
                 if event.type == pygame.QUIT:
                     PlaneGame.__game_over()
                 # 监听鼠标点击事件
-                ## TODO 待优化鼠标点击按钮
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pressed_array = pygame.mouse.get_pressed()
                     for index in range(len(pressed_array)):
                         if pressed_array[index]:
                             if index == 0:
-                                print('Pressed LEFT Button!')
-                                plane = PlaneGame(screen)
-                                plane.start_game()
+                                pos = pygame.mouse.get_pos()
+                                # 判断鼠标的点击范围
+                                if 90 < pos[0] < 390 and 400 < pos[1] < 441:
+                                    plane = PlaneGame(screen)
+                                    plane.start_game()
 
 
 if __name__ == '__main__':
